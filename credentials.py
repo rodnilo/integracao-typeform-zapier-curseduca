@@ -8,3 +8,4 @@ endpoint_groups = "https://prof.curseduca.pro/members/groups"
 endpoint_tenants = "https://prof.curseduca.pro/members/tenants"
 endpoint_enrollments = "https://clas.curseduca.pro/enrollments"
 endpoint_inactivate = "https://prof.curseduca.pro/inactivate-member"
+

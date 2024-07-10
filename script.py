@@ -312,3 +312,4 @@ elif input_data['action'] == 'delete':
         inactivate(email, token)
     except KeyError as e:
         print(e)
+
