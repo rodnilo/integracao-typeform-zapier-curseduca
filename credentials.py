@@ -1,0 +1,11 @@
+url = ""
+api_key = ""
+username = ""
+password = ""
+endpoint_contents = ""
+endpoint_register = ""
+endpoint_groups = ""
+endpoint_tenants = ""
+endpoint_enrollments = ""
+endpoint_inactivate = ""
+
