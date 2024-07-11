@@ -9,9 +9,9 @@ from credentials import (
     endpoint_groups,
     endpoint_tenants,
     endpoint_enrollments,
-    endpoint_inactivate
+    endpoint_inactivate,
+    endpoint_identify
 )
-from input_data import input_data
 
 # Parâmetros
 url = url
@@ -46,8 +46,8 @@ def auth():
     # Extrai token
     response_json = response_post.json()
     access_token = response_json['accessToken']
-    print(response_json)
-    return access_token ##
+    return access_token
+
 
 def find_id_by_title(contents, target_titles):
     """
@@ -66,6 +66,7 @@ def find_id_by_title(contents, target_titles):
     id_map = {item['title']: item['id'] for item in contents}
     return [id_map.get(title, None) for title in target_titles]
 
+
 def find_uuid_by_title(contents, target_titles):
     """
     função que tem o objetivo de buscar os títulos dos conteúdos selecionados no typeform para retornar o uuid (string)
@@ -82,6 +83,7 @@ def find_uuid_by_title(contents, target_titles):
     target_titles = contents_comma
     id_map = {item['title']: item['uuid'] for item in contents}
     return [id_map.get(title, None) for title in target_titles]
+
 
 def get_contents(token):
     """
@@ -147,10 +149,12 @@ def register_with_contents(token, name, email, conteudos_selecionados, conteudos
     response_post = requests.post(endpoint_register, headers=headers, json=body)
 
     response_json = response_post.json()
-    print(response_json)
     user_id = response_json['id']
-    print(user_id)
-    return user_id
+    if type(user_id) is int:
+        return user_id
+    else:
+        return response_json
+
 
 def enroll_group(token, id, group_id):
     """
@@ -174,7 +178,7 @@ def enroll_group(token, id, group_id):
 
     response_post = requests.post(endpoint_groups, headers=headers, json=body)
 
-    return response_post.json()
+    return response_post
 
 def enroll_tenant(token, id, tenant_uuid):
     """
@@ -197,7 +201,7 @@ def enroll_tenant(token, id, tenant_uuid):
 
     response_post = requests.post(endpoint_tenants, headers=headers, json=body)
 
-    return response_post.json()
+    return response_post
 
 def identify(email):
     """
@@ -206,13 +210,15 @@ def identify(email):
     :param email: email a ser identificado
     :return: id do usuário
     """
-    endpoint_busca = f"https://prof.curseduca.pro/members/by?email={email}"
+    endpoint_busca = endpoint_identify + f"by?email={email}"
 
     response_get = requests.get(endpoint_busca, headers=headers)
     response_json = response_get.json()
     member_id = response_json['id']
-    return member_id
-
+    if type(member_id) is int:
+        return member_id
+    else:
+        return response_json
 def enroll(member_id, conteudos_selecionados, conteudos, token):
     """
     Função com o objetivo de matricular um usuário existente em um ou mais conteúdos, passando o member_id e o(s) content_id(s)
@@ -224,13 +230,14 @@ def enroll(member_id, conteudos_selecionados, conteudos, token):
     """
 
     content_ids = find_id_by_title(conteudos, conteudos_selecionados)
-    print(content_ids)
     headers = {
         "api_key": api_key,
         "Content-Type": "application/json",
         "Authorization": f"Bearer {token}"
     }
 
+    enrollments = []
+    counter = 0
     for i in content_ids:
         body = {
             "member": {
@@ -242,7 +249,14 @@ def enroll(member_id, conteudos_selecionados, conteudos, token):
         response_post = requests.post(endpoint_enrollments, headers=headers, json=body)
 
         response_json = response_post.json()
-        print(response_json)
+        if type(response_json) is int:
+            enrollments.append(response_json)
+        else:
+            pass
+        counter += 1
+    if len(enrollments) == counter:
+        return enrollments
+    else:
         return response_json
 
 def inactivate(email, token):
@@ -262,54 +276,66 @@ def inactivate(email, token):
     body = {
         "member": {"entries": [email]}
     }
-
     response_patch = requests.patch(endpoint_inactivate, headers=headers, json=body)
     return response_patch.json()
 
 
 if input_data['action'] == 'update':
     try:
+        print(f"Operação a ser realizada: {input_data['action']}")
         token = auth()
+        print(f"Autenticação realizada. Token gerado: {token}")
         email = input_data['email_update']
-        print(email)
-        conteudos_selecionados = input_data['contents_update'].split(",")
-        conteudos_selecionados = [i.strip() for i in conteudos_selecionados]
+        print(f"E-mail a ser atualizado: {email}")
+        conteudos_selecionados = input_data['contents_update'].split(",") #comentar de .split até o fim da próxima linha para o código rodar localmente. Isso foi adicionado para rodar de acordo com o tratamento do Zapier.
+        conteudos_selecionados = [i.strip() for i in conteudos_selecionados] #comentar
+        print(f"Conteúdos selecionados para serem matriculados: {conteudos_selecionados}")
         conteudos = get_contents(token)
         member_id = identify(email)
-        print(member_id)
-        enroll(member_id,
-                  conteudos=conteudos,
-                  conteudos_selecionados=conteudos_selecionados,
-                  token=token)
+        print(f"ID do membro {email}: {member_id}")
+        status_enroll = enroll(member_id, conteudos=conteudos, conteudos_selecionados=conteudos_selecionados, token=token)
+        print(f"Resposta da matricula: {status_enroll}")
     except KeyError as e:
         print(e)
 
 elif input_data['action'] == 'create':
     try:
+        print(f"Operação a ser realizada: {input_data['action']}")
         token = auth()
+        print(f"Autenticação realizada. Token gerado: {token}")
         nome = input_data['name']
         group_id = input_data['group_id']
         tenant_uuid = input_data['tenant_uuid']
         email = input_data['email_create']
+        print(f"Dados a serem preenchidos: /n nome: {nome}; /n email: {email}, /n turma: {group_id}, /n plataforma: {tenant_uuid}")
         conteudos = get_contents(token)
-        conteudos_selecionados = input_data['contents_create'].split(",")
-        conteudos_selecionados = [i.strip() for i in conteudos_selecionados]
+        conteudos_selecionados = input_data['contents_create'].split(",") #comentar de .split até o fim da próxima linha para o código rodar localmente. Isso foi adicionado para rodar de acordo com o tratamento do Zapier.
+        conteudos_selecionados = [i.strip() for i in conteudos_selecionados] #comentar
+        print(f"Conteúdos selecionados: {conteudos_selecionados}")
         member_id = register_with_contents(token=token,
                                            name=nome,
                                            email=email,
                                            conteudos_selecionados=conteudos_selecionados,
                                            conteudos=conteudos)
-        enroll_group(token, member_id, group_id)
-        enroll_tenant(token, member_id, tenant_uuid)
-        print(conteudos)
+        print(f"Resposta do register_with_contents: {member_id}")
+        response_enroll_group = enroll_group(token, member_id, group_id)
+        print(f"Resposta do enroll_group: {response_enroll_group}")
+        response_enroll_tenant = enroll_tenant(token, member_id, tenant_uuid)
+        print(f"Resposta do enroll_group: {response_enroll_tenant}")
+
     except KeyError as e:
         print(e)
 
 elif input_data['action'] == 'delete':
     try:
+        print(f"Operação a ser realizada: {input_data['action']}")
         token = auth()
+        print(f"Autenticação realizada. Token gerado: {token}")
         email = input_data['email_delete']
-        inactivate(email, token)
+        print(f"Email a ser desativado: {email}")
+        response_inactivate = inactivate(email, token)
+        print(f"Resposta ação {input_data['action']}: {response_inactivate}")
+
     except KeyError as e:
         print(e)
 
