@@ -8,4 +8,4 @@ endpoint_groups = ""
 endpoint_tenants = ""
 endpoint_enrollments = ""
 endpoint_inactivate = ""
-
+endpoint_identify = ""
