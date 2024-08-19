@@ -266,7 +266,7 @@ def revoke_all(enrollments, token):
     """
 
     for i in enrollments:
-        endpoint = f"{endpoint_enrollments}/{i}"
+        endpoint = f"{endpoint_restore_enrollments}/{i}"
         headers = {
             "api_key": api_key,
             "Authorization": f"Bearer {token}",
