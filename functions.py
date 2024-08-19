@@ -266,7 +266,7 @@ def revoke_all(enrollments, token):
     """
 
     for i in enrollments:
-        endpoint = f"https://clas.curseduca.pro/enrollments/{i}"
+        endpoint = f"{endpoint_enrollments}/{i}"
         headers = {
             "api_key": api_key,
             "Authorization": f"Bearer {token}",
