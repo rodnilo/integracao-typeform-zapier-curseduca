@@ -135,7 +135,8 @@ def register_with_contents(token, name, email, conteudos_selecionados, conteudos
         "name": name,
         "email": email,
         "sendConfirmationEmail": "true",
-        "contentsToEnroll": content_uuids
+        "contentsToEnroll": content_uuids,
+        "pwd":input_data['pwd']
     }
 
     headers = {
